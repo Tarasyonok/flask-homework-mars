@@ -1,6 +1,6 @@
 import datetime
 
-from flask import Flask
+from flask import Flask, render_template
 from data import db_session
 from data.users import User
 from data.jobs import Jobs
@@ -11,7 +11,14 @@ app.config['SECRET_KEY'] = 'yandexlyceum_secret_key'
 
 def main():
     db_session.global_init("db/database.db")
-    add_jobs()
+    # show_users()
+    app.run()
+
+
+def show_users():
+    db_sess = db_session.create_session()
+    for user in db_sess.query(User).all():
+        print(user)
 
 
 def add_jobs():
@@ -61,6 +68,19 @@ def add_users():
         user.email = info["email"]
         db_sess.add(user)
         db_sess.commit()
+
+@app.route("/")
+def index():
+    db_sess = db_session.create_session()
+
+    param = {}
+    param["activities"] = db_sess.query(Jobs).all()
+    param["leaders"] = []
+    for job in param["activities"]:
+        leader = db_sess.query(User).get(job.team_leader)
+        param["leaders"].append(f"{leader.name} {leader.surname}")
+    return render_template('job-journal.html', **param)
+
 
 if __name__ == 'main':
     main()
