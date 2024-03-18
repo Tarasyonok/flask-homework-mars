@@ -1,7 +1,7 @@
 import datetime
 
 import flask
-from data import db_session
+from data import db_session, jobs_api
 from data.users import User
 from data.jobs import Jobs
 from data.departments import Department
@@ -21,11 +21,21 @@ def load_user(user_id):
     return db_sess.query(User).get(user_id)
 
 
+
+@app.errorhandler(400)
+def bad_request(_):
+    return flask.make_response(flask.jsonify({'error': 'Bad Request'}), 400)
+
+
+@app.errorhandler(404)
+def not_found(_):
+    return flask.make_response(flask.jsonify({'error': 'Not found'}), 404)
+
+
+
 def main():
     db_session.global_init("db/database.db")
-    # add_users()
-    # show_users()
-    # add_departments()
+    app.register_blueprint(jobs_api.blueprint)
     app.run()
 
 
@@ -160,14 +170,14 @@ def login():
                                form=form)
     return flask.render_template('login.html', title='Авторизация', form=form)
 
-@app.route('/logout')
+@app.route('/logout/')
 @login_required
 def logout():
     logout_user()
     return flask.redirect("/")
 
 
-@app.route('/addjob',  methods=['GET', 'POST'])
+@app.route('/addjob/',  methods=['GET', 'POST'])
 @login_required
 def addjob():
     form = AddJobForm()
@@ -189,7 +199,7 @@ def addjob():
                            form=form)
 
 
-@app.route('/editjob/<int:job_id>', methods=['GET', 'POST'])
+@app.route('/editjob/<int:job_id>/', methods=['GET', 'POST'])
 @login_required
 def editjob(job_id):
     form = AddJobForm()
@@ -228,7 +238,7 @@ def editjob(job_id):
                            )
 
 
-@app.route('/deletejob/<int:job_id>', methods=['GET', 'POST'])
+@app.route('/deletejob/<int:job_id>/', methods=['GET', 'POST'])
 @login_required
 def deletejob(job_id):
     db_sess = db_session.create_session()
@@ -245,7 +255,6 @@ def deletejob(job_id):
         flask.abort(404)
 
     return flask.redirect('/')
-
 
 # @app.route("/cookie_test")
 # def cookie_test():

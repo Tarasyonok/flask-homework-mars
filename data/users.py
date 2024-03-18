@@ -5,13 +5,14 @@ from .db_session import SqlAlchemyBase
 from data.jobs import Jobs
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import UserMixin
+from sqlalchemy_serializer import SerializerMixin
 
 
 import datetime
 import sqlalchemy
 
 
-class User(SqlAlchemyBase, UserMixin):
+class User(SqlAlchemyBase, UserMixin, SerializerMixin):
     __tablename__ = "users"
 
     id = sqlalchemy.Column(sqlalchemy.Integer,
@@ -25,6 +26,8 @@ class User(SqlAlchemyBase, UserMixin):
     email = sqlalchemy.Column(sqlalchemy.String, unique=True)
     hashed_password = sqlalchemy.Column(sqlalchemy.String)
     modified_date = sqlalchemy.Column(sqlalchemy.DateTime, default=datetime.datetime.now)
+
+    # jobs = orm.relationship("Jobs", back_populates='user')
 
     # jobs = orm.relationship("Jobs", back_populates='user')
 
