@@ -1,5 +1,5 @@
 import flask
-from flask import request, jsonify, make_response
+from flask import request, jsonify, make_response, redirect
 
 from . import db_session
 from .jobs import Jobs
@@ -16,7 +16,7 @@ def get_jobs():
 
 
 @blueprint.route('/api/jobs/<int:job_id>', methods=['GET'])
-def get_one_jobs(job_id):
+def get_one_job(job_id):
     db_sess = db_session.create_session()
     job = db_sess.query(Jobs).get(job_id)
     if not job:
@@ -25,7 +25,7 @@ def get_one_jobs(job_id):
 
 
 @blueprint.route('/api/jobs', methods=['POST'])
-def create_jobs():
+def create_job():
     required_columns = ['team_leader', 'job', 'work_size', 'collaborators', 'is_finished']
     if not request.json:
         return make_response(jsonify({'error': 'Empty request'}), 400)
@@ -38,18 +38,45 @@ def create_jobs():
         kwargs[key] = request.json[key]
     print(kwargs)
 
-    jobs = Jobs(**kwargs)
-    db_sess.add(jobs)
+    job = Jobs(**kwargs)
+    db_sess.add(job)
     db_sess.commit()
     return jsonify({'id': jobs.id})
 
 
-@blueprint.route('/api/news/<int:news_id>', methods=['DELETE'])
-def delete_news(news_id):
+@blueprint.route('/api/jobs/<int:job_id>', methods=['DELETE'])
+def delete_job(job_id):
+    print("!!!!!!!!!DELETING!!!!!!!!!!")
     db_sess = db_session.create_session()
-    news = db_sess.query(News).get(news_id)
-    if not news:
+    job = db_sess.query(Jobs).get(job_id)
+    if not job:
         return make_response(jsonify({'error': 'Not found'}), 404)
-    db_sess.delete(news)
+    db_sess.delete(job)
     db_sess.commit()
-    return jsonify({'success': 'OK'})
+    return make_response(jsonify({'success': 'OK'}))
+
+
+@blueprint.route('/api/jobs/<int:job_id>', methods=['PUT'])
+def update_job(job_id):
+    required_columns = ['team_leader', 'job', 'work_size', 'collaborators', 'is_finished']
+    if not request.json:
+        return make_response(jsonify({'error': 'Empty request'}), 400)
+    elif not all(key in request.json for key in required_columns):
+        return make_response(jsonify({'error': 'Bad request'}), 400)
+    db_sess = db_session.create_session()
+
+    job = db_sess.query(Jobs).get(job_id)
+
+    if not job:
+        return make_response(jsonify({'error': 'Bad request'}), 400)
+
+    print(job)
+
+    job.team_leader = request.json['team_leader']
+    job.job = request.json['job']
+    job.work_size = request.json['work_size']
+    job.collaborators = request.json['collaborators']
+    job.is_finished = request.json['is_finished']
+
+    db_sess.commit()
+    return make_response(jsonify({'id': job.id}))

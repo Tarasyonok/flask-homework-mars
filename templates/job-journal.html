@@ -2,6 +2,7 @@
 
 {% block content %}
   <h2 class="text-center">Works log</h2>
+  <a href="/departments/" class="btn btn-secondary">К департаментам</a>
   {% if current_user.is_authenticated %}
     <a href="addjob" class="btn btn-secondary">Добавить работу</a>
   {% endif %}
@@ -20,7 +21,7 @@
       <tbody>
         <tr>
           <td>{{ job.job }}</td>
-          <td>{{ leaders[loop.index0] }}</td>
+          <td>{{ job.user.name }} {{ job.user.surname }}</td>
           <td>{{ job.work_size }}</td>
           <td>{{ job.collaborators }}</td>
           <td>{% if job.is_finished %}finished{% else %}not finished{% endif %}</td>

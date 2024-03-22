@@ -1,13 +1,15 @@
 import datetime
 
 import flask
-from data import db_session, jobs_api
+from data import db_session, jobs_api, user_api
 from data.users import User
 from data.jobs import Jobs
 from data.departments import Department
 from forms.user import RegisterForm, LoginForm
 from forms.jobs import AddJobForm
+from forms.department import AddDepartmentForm
 from flask_login import LoginManager, login_user, login_required, logout_user, current_user
+from requests import get, post, delete, put
 
 app = flask.Flask(__name__)
 app.config['SECRET_KEY'] = 'yandexlyceum_secret_key'
@@ -36,7 +38,12 @@ def not_found(_):
 def main():
     db_session.global_init("db/database.db")
     app.register_blueprint(jobs_api.blueprint)
-    app.run()
+    app.register_blueprint(user_api.blueprint)
+    # add_users()
+    # add_jobs()
+    # add_departments()
+
+    # app.run()
 
 
 def show_users():
@@ -44,42 +51,23 @@ def show_users():
     for user in db_sess.query(User).all():
         print(user.surname, user.name)
 
-
-# def add_jobs():
-#     data = [
-#         {"team_leader": 1, "job": "deployment of residential modules 1 and 2",
-#          "work_size": 15, "collaborators": "2, 3",
-#          "is_finished": False},
-#     ]
-#
-#     db_sess = db_session.create_session()
-#
-#     for info in data:
-#         print(info)
-#         job = Jobs()
-#         job.team_leader = info["team_leader"]
-#         job.job = info["job"]
-#         job.work_size = info["work_size"]
-#         job.collaborators = info["collaborators"]
-#         job.is_finished = info["is_finished"]
-#         db_sess.add(job)
-#         db_sess.commit()
-#
 def add_users():
     data = [
         {"surname": "a", "name": "b", "age": 1, "position": "tester", "speciality": "tester",
-         "address": "module_1", "email": "a@b", "password": "123"},
+         "address": "module_1", "email": "a@b", "city_from": "Москва", "password": "123"},
         {"surname": "Scott", "name": "Ridley", "age": 21, "position": "captain", "speciality": "research engineer",
-         "address": "module_1", "email": "scott_chief@mars.org", "password": "123"},
+         "address": "module_1", "email": "scott_chief@mars.org", "city_from": "Санкт-Петербург", "password": "123"},
         {"surname": "Kirillov", "name": "Dmitry", "age": 38, "position": "member", "speciality": "teacher",
-         "address": "бул. Космонавтов, 9, Красногорск", "email": "kirillov@yandexlyceum.ru", "password": "123"},
+         "address": "бул. Космонавтов, 9, Красногорск", "email": "kirillov@yandexlyceum.ru", "city_from": "Красногорск", "password": "123"},
         {"surname": "Mask", "name": "Elon", "age": 52, "position": "owner", "speciality": "investor",
-         "address": "Rocket Road, Hawthorne California, CA 90250, USA", "email": "info@spacex.com", "password": "123"},
+         "address": "Rocket Road, Hawthorne California, CA 90250, USA", "email": "info@spacex.com",
+         "city_from": "New York", "password": "123"},
         {"surname": "Gagarin", "name": "Yuri", "age": 90, "position": "member", "speciality": "pilot",
-         "address": "Ленинский просп., 39Б, Москва", "email": "yuri_gagarin@mars.org", "password": "123"},
+         "address": "Ленинский просп., 39Б, Москва", "email": "yuri_gagarin@mars.org", "city_from": "Пекин", "password": "123"},
     ]
 
     db_sess = db_session.create_session()
+    db_sess.commit()
 
     for info in data:
         print(info)
@@ -91,39 +79,64 @@ def add_users():
         user.speciality = info["speciality"]
         user.address = info["address"]
         user.email = info["email"]
+        user.city_from = info["city_from"]
         user.set_password(info["password"])
         db_sess.add(user)
         db_sess.commit()
-#
-# def add_departments():
-#     data = [
-#         {"title": "battling the forces of Hell, consisting of demons and the undead", "chief": 1,
-#          "email": "doom@mars.com", "members": "1, 4"},
-#     ]
-#
-#     db_sess = db_session.create_session()
-#
-#     for info in data:
-#         department = Department()
-#         department.title = info["title"]
-#         department.chief = info["chief"]
-#         department.email = info["email"]
-#         department.members = info["members"]
-#         db_sess.add(department)
-#         db_sess.commit()
-#         print(department)
+
+
+def add_jobs():
+    data = [
+        {"team_leader": 1, "job": "deployment of residential modules 1 and 2",
+         "work_size": 15, "collaborators": "2, 3",
+         "is_finished": False},
+    ]
+
+    db_sess = db_session.create_session()
+
+    for info in data:
+        print(info)
+        job = Jobs()
+        job.team_leader = info["team_leader"]
+        job.job = info["job"]
+        job.work_size = info["work_size"]
+        job.collaborators = info["collaborators"]
+        job.is_finished = info["is_finished"]
+        job.user = db_sess.query(User).get(info["team_leader"])
+        db_sess.add(job)
+        job.user.jobs.append(job)
+        db_sess.merge(job.user)
+        db_sess.commit()
+
+
+def add_departments():
+    data = [
+        {"title": "battling the forces of Hell, consisting of demons and the undead", "chief": 1,
+         "email": "doom@mars.com", "members": "1, 4"},
+    ]
+
+    db_sess = db_session.create_session()
+
+    for info in data:
+        department = Department()
+        department.title = info["title"]
+        department.chief = info["chief"]
+        department.email = info["email"]
+        department.members = info["members"]
+
+        department.user = db_sess.query(User).get(info["chief"])
+        db_sess.add(department)
+        department.user.departments.append(department)
+        db_sess.merge(department.user)
+        db_sess.commit()
+        print(department)
 
 
 @app.route("/")
 def index():
     db_sess = db_session.create_session()
-
     param = {}
     param["activities"] = db_sess.query(Jobs).all()
-    param["leaders"] = []
-    for job in param["activities"]:
-        leader = db_sess.query(User).get(job.team_leader)
-        param["leaders"].append(f"{leader.name} {leader.surname}")
     param["current_user"] = current_user
     return flask.render_template('job-journal.html', **param)
 
@@ -277,6 +290,158 @@ def deletejob(job_id):
 #     flask.session['visits_count'] = visits_count + 1
 #     return make_response(
 #         f"Вы пришли на эту страницу {visits_count + 1} раз")
+
+
+@app.route("/users_show/<int:user_id>/")
+def users_show(user_id):
+
+    user = get(f'http://localhost:5000/api/users/{user_id}').json()["user"]
+    params = {}
+
+    params = {
+        'apikey': '40d1649f-0493-4b70-98ba-98533de7710b',
+        'geocode': user['city_from'],
+        'format': 'json',
+    }
+
+    geocoder_request = "http://geocode-maps.yandex.ru/1.x/"
+    response = get(geocoder_request, params=params)
+    print(response.url)
+
+    if not response:
+        # print("Ошибка выполнения запроса:")
+        # print("Http статус:", response.status_code, "(", response.reason, ")")
+        print("Нечего не нашлось")
+        return flask.make_response("Нечего не нашлось")
+
+    json_response = response.json()
+
+    toponym = json_response["response"]["GeoObjectCollection"]["featureMember"][0]["GeoObject"]
+    toponym_coodrinates = toponym["Point"]["pos"]
+    try:
+        bbox = json_response["response"]["GeoObjectCollection"]["metaDataProperty"]["GeocoderResponseMetaData"]["boundedBy"]["Envelope"]
+    except KeyError:
+        bbox = toponym["boundedBy"]["Envelope"]
+    x1, y1 = list(map(float, bbox["lowerCorner"].split(' ')))
+    x2, y2 = list(map(float, bbox["upperCorner"].split(' ')))
+    print(f'toponym_coodrinates: {toponym_coodrinates}')
+    coods = list(map(float, toponym_coodrinates.split(' ')))
+
+    ln = coods[0]
+    lt = coods[1]
+
+    params = {
+        'll': f'{str(ln)},{str(lt)}',
+        'bbox': f'{x1},{y1}~{x2},{y2}',
+        'spn': f'{str(y2 - y1)},{str(y2 - y1)}',
+        'l': 'sat',
+        'size': '600,400',
+    }
+
+    map_request = f"http://static-maps.yandex.ru/1.x/"
+    response = get(map_request, params=params)
+    print(response.url)
+
+    if not response:
+        print("Ошибка выполнения запроса:")
+        print(map_request)
+        print("Http статус:", response.status_code, "(", response.reason, ")")
+        return flask.make_response("Ошибка выполнения запроса")
+
+    map_file = "static/map.png"
+    with open(map_file, "wb") as file:
+        file.write(response.content)
+
+    return flask.render_template('users_show.html', name=f"{user['name']} {user['surname']}")
+
+
+@app.route("/departments/")
+def departments():
+    db_sess = db_session.create_session()
+    param = {}
+    param["departments"] = db_sess.query(Department).all()
+    param["current_user"] = current_user
+    return flask.render_template('departments.html', **param)
+
+
+@app.route('/adddepartment/',  methods=['GET', 'POST'])
+@login_required
+def adddepartment():
+    form = AddDepartmentForm()
+    if form.validate_on_submit():
+        db_sess = db_session.create_session()
+        department = Department()
+        department.title = form.title.data
+        department.chief = form.chief.data
+        department.members = form.members.data
+        department.email = form.email.data
+        department.user = db_sess.query(User).get(form.chief.data)
+        db_sess.add(department)
+        department.user.departments.append(department)
+        db_sess.merge(department.user)
+        db_sess.commit()
+        return flask.redirect('/')
+    return flask.render_template('adddepartment.html', title='работы',
+                           form=form)
+
+
+@app.route('/editdepartment/<int:department_id>/', methods=['GET', 'POST'])
+@login_required
+def editdepartment(department_id):
+    form = AddDepartmentForm()
+    if flask.request.method == "GET":
+        db_sess = db_session.create_session()
+        department = db_sess.query(Department).filter(Department.id == department_id).first()
+        if department:
+            form.title.data = department.title
+            form.chief.data = department.chief
+            form.members.data = department.members
+            form.email.data = department.email
+        else:
+            flask.abort(404)
+    if form.validate_on_submit():
+        db_sess = db_session.create_session()
+        if current_user.id == 1:
+            department = db_sess.query(Department).get(department_id)
+        else:
+            department = db_sess.query(Department).filter(Department.id == department_id,
+                                              departments.user == current_user,
+                                              ).first()
+        if department:
+            department.title = form.title.data
+            department.chief = form.chief.data
+            department.members = form.members.data
+            department.email = form.email.data
+            db_sess.commit()
+            return flask.redirect('/departments')
+        else:
+            flask.abort(404)
+    return flask.render_template('adddepartment.html',
+                           title='Редактирование работы',
+                           form=form
+                           )
+
+
+@app.route('/deletedepartment/<int:department_id>/', methods=['GET', 'POST'])
+@login_required
+def deletedepartment(department_id):
+    db_sess = db_session.create_session()
+    if current_user.id == 1:
+        department = db_sess.query(Department).get(department_id)
+    else:
+        department = db_sess.query(Department).filter(Department.id == department_id,
+                                         departments.user == current_user,
+                                         ).first()
+    if department:
+        db_sess.delete(department)
+        db_sess.commit()
+    else:
+        flask.abort(404)
+
+    return flask.redirect('/departments')
+
+
+
 
 
 if __name__ == 'main':
