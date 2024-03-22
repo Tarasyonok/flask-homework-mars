@@ -43,7 +43,7 @@ def main():
     # add_jobs()
     # add_departments()
 
-    # app.run()
+    app.run()
 
 
 def show_users():
@@ -380,7 +380,7 @@ def adddepartment():
         department.user.departments.append(department)
         db_sess.merge(department.user)
         db_sess.commit()
-        return flask.redirect('/')
+        return flask.redirect('/departments')
     return flask.render_template('adddepartment.html', title='работы',
                            form=form)
 

@@ -4,7 +4,7 @@ from wtforms.validators import DataRequired
 
 
 class AddDepartmentForm(FlaskForm):
-    title = wtforms.StringField('Job title', validators=[DataRequired()])
+    title = wtforms.StringField('Department title', validators=[DataRequired()])
     chief = wtforms.IntegerField('Chief id', validators=[DataRequired()])
     members = wtforms.StringField('Members', validators=[DataRequired()])
     email = wtforms.EmailField('Email', validators=[DataRequired()])
