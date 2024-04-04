@@ -32,6 +32,15 @@
         {% endfor %}
     </p>
     <p>
+        {{ form.hazard.label }}<br>
+        {{ form.hazard(class="form-control", type="number") }}<br>
+        {% for error in form.hazard.errors %}
+            <p class="alert alert-danger" role="alert">
+                {{ error }}
+            </p>
+        {% endfor %}
+    </p>
+    <p>
         {{ form.collaborators.label }}<br>
         {{ form.collaborators(class="form-control") }}<br>
         {% for error in form.collaborators.errors %}

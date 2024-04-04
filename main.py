@@ -4,6 +4,7 @@ import flask
 from data import db_session, jobs_api, user_api
 from data.users import User
 from data.jobs import Jobs
+from data.categories import Category
 from data.departments import Department
 from forms.user import RegisterForm, LoginForm
 from forms.jobs import AddJobForm
@@ -39,6 +40,8 @@ def main():
     db_session.global_init("db/database.db")
     app.register_blueprint(jobs_api.blueprint)
     app.register_blueprint(user_api.blueprint)
+
+    # init_hazard_categories()
     # add_users()
     # add_jobs()
     # add_departments()
@@ -85,11 +88,23 @@ def add_users():
         db_sess.commit()
 
 
+def init_hazard_categories():
+
+    db_sess = db_session.create_session()
+
+    for i in range(1, 6):
+        cat = Category()
+        cat.hazard = i
+        cat.jobs = ""
+        db_sess.add(cat)
+        db_sess.commit()
+
+
 def add_jobs():
     data = [
         {"team_leader": 1, "job": "deployment of residential modules 1 and 2",
          "work_size": 15, "collaborators": "2, 3",
-         "is_finished": False},
+         "is_finished": False, "hazard": 1},
     ]
 
     db_sess = db_session.create_session()
@@ -100,12 +115,20 @@ def add_jobs():
         job.team_leader = info["team_leader"]
         job.job = info["job"]
         job.work_size = info["work_size"]
+        job.hazard = info["hazard"]
         job.collaborators = info["collaborators"]
         job.is_finished = info["is_finished"]
         job.user = db_sess.query(User).get(info["team_leader"])
         db_sess.add(job)
         job.user.jobs.append(job)
         db_sess.merge(job.user)
+
+        cat = db_sess.query(Category).filter(Category.hazard == info["hazard"])[0]
+        cat_jobs = cat.jobs.split()
+        cat_jobs.append(str(job.id))
+        cat.jobs = " ".join(cat_jobs)
+        db_sess.add(cat)
+
         db_sess.commit()
 
 
@@ -200,12 +223,20 @@ def addjob():
         job.job = form.job.data
         job.team_leader = form.team_leader.data
         job.work_size = form.work_size.data
+        job.hazard = form.hazard.data
         job.collaborators = form.collaborators.data
         job.is_finished = form.is_finished.data
         local_user = db_sess.merge(current_user)
         job.creator = local_user
         # local_object = db_session.merge(original_object)
         db_sess.add(job)
+
+        cat = db_sess.query(Category).filter(Category.hazard == form.hazard.data)[0]
+        cat_jobs = cat.jobs.split()
+        cat_jobs.append(str(job.id))
+        cat.jobs = " ".join(cat_jobs)
+        db_sess.add(cat)
+
         db_sess.commit()
         return flask.redirect('/')
     return flask.render_template('addjob.html', title='работы',

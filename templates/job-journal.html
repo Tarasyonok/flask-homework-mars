@@ -14,6 +14,7 @@
           <th scope="col">Title of activity</th>
           <th scope="col">Team leader</th>
           <th scope="col">Duration</th>
+          <th scope="col">Hazard</th>
           <th scope="col">List of collaborators</th>
           <th scope="col">Is finished</th>
         </tr>
@@ -23,6 +24,7 @@
           <td>{{ job.job }}</td>
           <td>{{ job.user.name }} {{ job.user.surname }}</td>
           <td>{{ job.work_size }}</td>
+          <td>{{ job.hazard }}</td>
           <td>{{ job.collaborators }}</td>
           <td>{% if job.is_finished %}finished{% else %}not finished{% endif %}</td>
         </tr>
